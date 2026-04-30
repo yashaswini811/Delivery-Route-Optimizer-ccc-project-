@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RouteDP — Delivery Route Optimizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── HEADER ── -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">Route<strong>DP</strong></span>
+      </div>
+      <div class="header-tag">Dynamic Programming · Delivery Optimizer</div>
+    </div>
+  </header>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">Minimum Cost Path · Memoization DP</div>
+      <h1 class="hero-title">Delivery Route<br /><span class="accent">Cost Optimizer</span></h1>
+      <p class="hero-sub">Find the cheapest delivery path between any two locations using Dynamic Programming with memoization — not brute force.</p>
+    </div>
+    <div class="hero-stat-strip">
+      <div class="stat"><span class="stat-val" id="stat-nodes">6</span><span class="stat-lbl">Locations</span></div>
+      <div class="stat-div"></div>
+      <div class="stat"><span class="stat-val" id="stat-edges">—</span><span class="stat-lbl">Edges</span></div>
+      <div class="stat-div"></div>
+      <div class="stat"><span class="stat-val" id="stat-algo">O(2ⁿ·n)</span><span class="stat-lbl">Complexity</span></div>
+    </div>
+  </section>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- LEFT PANEL: Controls -->
+    <section class="panel panel-left">
+
+      <!-- Graph Input -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">🗺</span>
+          <h2>Graph (Adjacency Matrix)</h2>
+          <button class="btn-ghost" id="btn-load-sample">Load Sample</button>
+        </div>
+        <p class="card-hint">Enter an N×N matrix. Use 0 for "no direct edge". Each cell = travel cost.</p>
+
+        <div class="node-controls">
+          <label>Locations (N):</label>
+          <div class="node-spinner">
+            <button id="btn-dec">−</button>
+            <span id="node-count-display">6</span>
+            <button id="btn-inc">+</button>
+          </div>
+          <label class="label-names">Names (comma-separated):</label>
+          <input id="node-names" type="text" value="A,B,C,D,E,F" class="input-names" placeholder="A,B,C..." />
+        </div>
+
+        <div class="matrix-scroll">
+          <div id="matrix-container" class="matrix-container"></div>
+        </div>
+
+        <div class="matrix-legend">
+          <span class="legend-dot empty"></span> 0 = No direct route
+          <span class="legend-dot filled"></span> &gt;0 = Travel cost
+        </div>
+      </div>
+
+      <!-- Route Selection -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">📍</span>
+          <h2>Route Selection</h2>
+        </div>
+        <div class="route-row">
+          <div class="route-field">
+            <label>Start Location</label>
+            <select id="start-node" class="select-node"></select>
+          </div>
+          <div class="route-arrow">→</div>
+          <div class="route-field">
+            <label>End Location</label>
+            <select id="end-node" class="select-node"></select>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-optimize">
+          <span class="btn-icon">🚚</span> Optimize Route
+        </button>
+      </div>
+
+    </section>
+
+    <!-- RIGHT PANEL: Result -->
+    <section class="panel panel-right">
+
+      <!-- Result Card -->
+      <div class="card card-result" id="result-card">
+        <div class="result-placeholder" id="result-placeholder">
+          <div class="placeholder-icon">🗂</div>
+          <p>Configure your graph and click <strong>Optimize Route</strong> to find the minimum cost delivery path.</p>
+        </div>
+
+        <div class="result-content hidden" id="result-content">
+          <div class="result-header">
+            <div class="result-badge">Optimal Route Found</div>
+            <div class="cost-display">
+              <span class="cost-label">Minimum Cost</span>
+              <span class="cost-value" id="result-cost">—</span>
+              <span class="cost-unit">units</span>
+            </div>
+          </div>
+
+          <div class="path-visual" id="path-visual"></div>
+
+          <div class="result-meta">
+            <div class="meta-item">
+              <span class="meta-label">Nodes Traversed</span>
+              <span class="meta-val" id="meta-nodes">—</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Algorithm</span>
+              <span class="meta-val">Memoization DP</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Path</span>
+              <span class="meta-val" id="meta-path">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-error hidden" id="result-error">
+          <div class="error-icon">⚠</div>
+          <p id="error-msg">An error occurred.</p>
+        </div>
+      </div>
+
+      <!-- DP Explanation Card -->
+      <div class="card card-dp">
+        <div class="card-header">
+          <span class="card-icon">🧠</span>
+          <h2>How DP Works Here</h2>
+        </div>
+        <div class="dp-steps">
+          <div class="dp-step">
+            <div class="step-num">01</div>
+            <div class="step-body">
+              <strong>State Definition</strong>
+              <p>State = <code>(currentNode, visitedMask)</code>. The bitmask tracks which nodes have been visited.</p>
+            </div>
+          </div>
+          <div class="dp-step">
+            <div class="step-num">02</div>
+            <div class="step-body">
+              <strong>Overlapping Subproblems</strong>
+              <p>The same <code>(node, mask)</code> pair can be reached via multiple paths — we compute it only once.</p>
+            </div>
+          </div>
+          <div class="dp-step">
+            <div class="step-num">03</div>
+            <div class="step-body">
+              <strong>Optimal Substructure</strong>
+              <p><code>minCost(u→v) = min over neighbors w of (cost(u,w) + minCost(w→v))</code></p>
+            </div>
+          </div>
+          <div class="dp-step">
+            <div class="step-num">04</div>
+            <div class="step-body">
+              <strong>Memoization</strong>
+              <p>Results stored in a <code>Map</code>. On revisit, the cached value is returned instantly — O(1) lookup.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Complexity Card -->
+      <div class="card card-complexity">
+        <div class="card-header">
+          <span class="card-icon">📊</span>
+          <h2>Complexity Analysis</h2>
+        </div>
+        <div class="complexity-grid">
+          <div class="cplx-item">
+            <span class="cplx-type">Time</span>
+            <code class="cplx-val">O(2ⁿ · n)</code>
+          </div>
+          <div class="cplx-item">
+            <span class="cplx-type">Space</span>
+            <code class="cplx-val">O(2ⁿ · n)</code>
+          </div>
+          <div class="cplx-item">
+            <span class="cplx-type">Without DP</span>
+            <code class="cplx-val">O(n!)</code>
+          </div>
+          <div class="cplx-item">
+            <span class="cplx-type">Improvement</span>
+            <code class="cplx-val accent">Exponential</code>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ── LOADER OVERLAY ── -->
+  <div class="loader-overlay hidden" id="loader">
+    <div class="loader-box">
+      <div class="spinner"></div>
+      <p>Computing optimal route…</p>
+      <small>Dynamic Programming in progress</small>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Delivery Route Cost Optimizer · Dynamic Programming (Memoization) · Node.js + Express + Vanilla JS</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
